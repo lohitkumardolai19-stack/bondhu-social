@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bondhu Social</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f0f2f5;font-family:Arial,sans-serif;color:#222}
+header{background:#1877f2;color:white;padding:16px;font-size:25px;font-weight:bold}
+nav{display:flex;justify-content:space-around;background:white;padding:13px;position:sticky;top:0}
+nav span{font-size:20px}
+main{max-width:600px;margin:auto;padding:12px}
+.card{background:white;padding:15px;border-radius:12px;margin-bottom:13px}
+input,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:9px;margin:8px 0;font-size:16px}
+button{border:0;background:#1877f2;color:white;padding:10px 12px;border-radius:8px}
+.actions{display:flex;justify-content:space-around;flex-wrap:wrap;margin-top:12px;gap:5px}
+.actions button{background:#f0f2f5;color:#1877f2}
+.actions .delete-btn{color:#e53935}
+h3{margin:5px 0}
+.post-image{width:100%;border-radius:8px;margin-top:8px}
+.comment-area{margin-top:12px}
+.comment-item{background:#f0f2f5;padding:8px;border-radius:8px;margin-top:6px}
+</style>
+</head>
+<script>
+async function signUp() {
+  const name = document.getElementById("fullName").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const msg = document.getElementById("loginMsg");
+
+  if (!name || !email || !password) {
+    msg.innerText = "সব ঘর পূরণ করুন।";
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    email: email,
+    password: password,
+    options: {
+      data: { full_name: name }
+    }
+  });
+
+  if (error) {
+    msg.innerText = error.message;
+  } else {
+    msg.innerText = "অ্যাকাউন্ট তৈরি হয়েছে। ইমেইল চেক করুন।";
+  }
+}
+
+async function signIn() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const msg = document.getElementById("loginMsg");
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if (error) {
+    msg.innerText = error.message;
+  } else {
+    msg.innerText = "লগইন সফল হয়েছে!";
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("header").style.display = "block";
+  }
+}
+</script>
+<body>
+
+<div class="card" id="loginBox" style="margin:20px">
+  <h2>Bondhu Social-এ স্বাগতম ❤️</h2>
+
+  <input id="fullName" type="text" placeholder="আপনার নাম">
+
+  <input id="email" type="email" placeholder="ইমেইল ঠিকানা">
+
+  <input id="password" type="password" placeholder="পাসওয়ার্ড">
+
+  <button onclick="signUp()">নতুন অ্যাকাউন্ট খুলুন</button>
+
+  <button onclick="signIn()">লগইন করুন</button>
+
+  <p id="loginMsg"></p>
+</div>
+
+<header id="header" style="display:none">Bondhu Social 🌐</header>
+
+<nav id="nav" style="display:none">
+<span>🏠</span><span>👥</span><span>💬</span><span>🔔</span><span>👤</span>
+</nav>
+
+<main id="mainContent" style="display:none">
+
+<div class="card">
+<h2>আমার প্রোফাইল ❤️</h2><img id="profilePhoto" style="width:110px;height:110px;border-radius:50%;object-fit:cover;display:none">
+
+<input id="profilePhotoInput" type="file" accept="image/*">
+<input id="profileName" type="text" placeholder="আপনার নাম লিখুন">
+<textarea id="profileBio" placeholder="নিজের সম্পর্কে কিছু লিখুন"></textarea>
+<button onclick="saveProfile()">প্রোফাইল সেভ করুন</button>
+<p id="profileMsg"></p>
+</div>
+<div class="card">
+<h2>👥 বন্ধু খুঁজুন</h2>
+<input id="friendSearch" type="text" placeholder="বন্ধুর নাম লিখুন">
+<button onclick="searchFriends()">বন্ধু খুঁজুন</button>
+<div id="friendResults"></div>
+<h3>আমার বন্ধুরা ❤️</h3>
+<div id="myFriends"></div>
+</div>
+<div class="card">
+<h3>আপনার মনের কথা লিখুন</h3>
+<textarea id="message" placeholder="আপনি কী ভাবছেন?"></textarea>
+<input id="postImage" type="file" accept="image/*">
+<button id="postButton" onclick="addPost()">পোস্ট করুন</button>
+</div>
+
+<div id="feed">
+<div class="card">
+<h3>Bondhu Social 🌐</h3>
+<p>স্বাগতম! এটি আপনার নিজের সোশ্যাল মিডিয়া। ❤️</p>
+</div>
+</div>
+
+</main>
+
+<script>
+let enteredPhone = "";
+
+function sendOTP(){
+  let phone = document.getElementById("phone").value.trim();
+  let msg = document.getElementById("loginMsg");
+
+  if(!/^[0-9]{10}$/.test(phone)){
+    msg.textContent = "সঠিক ১০ সংখ্যার মোবাইল নম্বর দিন";
+    return;
+  }
+
+  enteredPhone = phone;
+  document.getElementById("otpBox").style.display = "block";
+  msg.textContent = "ডেমো OTP তৈরি হয়েছে। নিচে 123456 লিখুন।";
+}
+
+function verifyOTP(){
+  let otp = document.getElementById("otp").value.trim();
+  let msg = document.getElementById("loginMsg");
+
+  if(otp !== "123456"){
+    msg.textContent = "ভুল OTP! আবার চেষ্টা করুন।";
+    return;
+  }
+
+  localStorage.setItem("bondhuPhone", enteredPhone);
+  showApp();
+}
+
+function loadProfile(){
+  let name = localStorage.getItem("bondhuName");
+  let bio = localStorage.getItem("bondhuBio");
+
+  if(name){
+    document.getElementById("profileName").value = name;
+    document.getElementById("profileMsg").textContent = "স্বাগতম, " + name + " ❤️";
+  }
+
+  if(bio){
+    document.getElementById("profileBio").value = bio;
+  }
+}
+function loadProfilePhoto(){
+  let photo = localStorage.getItem("bondhuPhoto");
+  let img = document.getElementById("profilePhoto");
+
+  if(photo){
+    img.src = photo;
+    img.style.display = "block";
+  }
+}
+
+document.getElementById("profilePhotoInput").addEventListener("change", function(){
+  let file = this.files[0];
+
+  if(!file) return;
+
+  let reader = new FileReader();
+
+  reader.onload = function(e){
+    let img = document.getElementById("profilePhoto");
+    img.src = e.target.result;
+    img.style.display = "block";
+
+    localStorage.setItem("bondhuPhoto", e.target.result);loadPosts();
+    alert("প্রোফাইল ছবি সেভ হয়েছে ❤️");
+  };
+
+  reader.readAsDataURL(file);
+});
+function saveProfile(){
+  let name = document.getElementById("profileName").value.trim();
+  let bio = document.getElementById("profileBio").value.trim();
+
+  if(name === ""){
+    document.getElementById("profileMsg").textContent = "আপনার নাম লিখুন!";
+    return;
+  }
+
+  localStorage.setItem("bondhuName", name);
+  localStorage.setItem("bondhuBio", bio);
+let posts = getPosts();
+
+posts.forEach(post => {
+  post.name = name;
+});
+
+savePosts(posts);
+loadPosts();
+  document.getElementById("profileMsg").textContent =
+    "প্রোফাইল সেভ হয়েছে! স্বাগতম, " + name + " ❤️";
+}
+
+function getPosts(){
+  try{
+    return JSON.parse(localStorage.getItem("bondhuPosts") || "[]");
+  }catch(e){
+    return [];
+  }
+}
+
+function savePosts(posts){
+  try{
+    localStorage.setItem("bondhuPosts", JSON.stringify(posts));
+    return true;
+  }catch(e){
+    alert("সেভ করার জায়গা শেষ হয়ে গেছে। ছোট ছবি ব্যবহার করে আবার চেষ্টা করুন।");
+    return false;
+  }
+}
+
+function loadPosts(){
+  let feed = document.getElementById("feed");
+  feed.innerHTML = "";
+
+  let posts = getPosts();
+  posts.forEach(post => renderPost(post));
+}
+
+function renderPost(post){
+  let card = document.createElement("div");
+  card.className = "card";
+  let photo = localStorage.getItem("bondhuPhoto");
+post.photo = photo;
+  if(photo){
+    let profileImg = document.createElement("img");
+    profileImg.src = post.photo || photo;
+    profileImg.style.width = "45px";
+    profileImg.style.height = "45px";
+    profileImg.style.borderRadius = "50%";
+    profileImg.style.objectFit = "cover";
+    card.append(profileImg);
+  }
+  let title = document.createElement("h3");
+  title.textContent = post.name + " 👤";
+  card.append(title);
+
+  if(post.text){
+    let p = document.createElement("p");
+    p.textContent = post.text;
+    card.append(p);
+  }
+
+  if(post.image){
+    let img = document.createElement("img");
+    img.src = post.image;
+    img.className = "post-image";
+    card.append(img);
+  }
+
+  let actions = document.createElement("div");
+  actions.className = "actions";
+
+  let likeBtn = document.createElement("button");
+  likeBtn.textContent = "👍 লাইক " + (post.likes || 0);
+
+  likeBtn.onclick = function(){
+    let posts = getPosts();
+    let item = posts.find(p => p.id === post.id);
+
+    if(!item) return;
+
+    item.likes = (item.likes || 0) + 1;
+
+    if(savePosts(posts)){
+      likeBtn.textContent = "👍 লাইক " + item.likes;
+    }
+  };
+
+  let commentBtn = document.createElement("button");
+  commentBtn.textContent = "💬 কমেন্ট";
+
+  commentBtn.onclick = function(){
+    openComments(card, post.id);
+  };
+
+  let shareBtn = document.createElement("button");
+  shareBtn.textContent = "↗ শেয়ার";
+  shareBtn.onclick = sharePost;
+
+  let deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "🗑️ ডিলিট";
+  deleteBtn.className = "delete-btn";
+
+  deleteBtn.onclick = function(){
+    deletePost(post.id, card);
+  };
+
+  actions.append(likeBtn, commentBtn, shareBtn, deleteBtn);
+  card.append(actions);
+
+  document.getElementById("feed").prepend(card);
+}
+
+function deletePost(postId, card){
+  let answer = confirm("আপনি কি সত্যিই এই পোস্টটি মুছে ফেলতে চান?");
+
+  if(!answer){
+    return;
+  }
+
+  let posts = getPosts();
+  let updatedPosts = posts.filter(p => p.id !== postId);
+
+  if(savePosts(updatedPosts)){
+    card.remove();
+    alert("পোস্ট মুছে ফেলা হয়েছে ❤️");
+  }
+}
+
+function openComments(card, postId){
+  let area = card.querySelector(".comment-area");
+
+  if(area){
+    area.style.display = area.style.display === "none" ? "block" : "none";
+    return;
+  }
+
+  area = document.createElement("div");
+  area.className = "comment-area";
+
+  let input = document.createElement("input");
+  input.placeholder = "আপনার কমেন্ট লিখুন";
+
+  let send = document.createElement("button");
+  send.textContent = "কমেন্ট করুন";
+
+  let list = document.createElement("div");
+
+  function showComments(){
+    list.innerHTML = "";
+
+    let posts = getPosts();
+    let post = posts.find(p => p.id === postId);
+
+    if(!post) return;
+
+    (post.comments || []).forEach(comment => {
+      let p = document.createElement("p");
+      p.className = "comment-item";
+      p.textContent = comment.name + ": " + comment.text;
+      list.append(p);
+    });
+  }
+
+  send.onclick = function(){
+    let value = input.value.trim();
+
+    if(!value){
+      alert("আগে কমেন্ট লিখুন");
+      return;
+    }
+
+    let posts = getPosts();
+    let post = posts.find(p => p.id === postId);
+
+    if(!post) return;
+
+    if(!post.comments) post.comments = [];
+
+    post.comments.push({
+      name: localStorage.getItem("bondhuName") || "Bondhu",
+      text: value
+    });
+
+    if(savePosts(posts)){
+      input.value = "";
+      showComments();
+    }
+  };
+
+  area.append(input, send, list);
+  card.append(area);
+  showComments();
+}
+
+function addPost(){
+  let input = document.getElementById("message");
+  let value = input.value.trim();
+  let imageInput = document.getElementById("postImage");
+  let file = imageInput.files[0];
+
+  if(!value && !file){
+    alert("লেখা অথবা ছবি যোগ করুন");
+    return;
+  }
+
+  let button = document.getElementById("postButton");
+  button.disabled = true;
+  button.textContent = "অপেক্ষা করুন...";
+
+  function finishPost(imageData){
+    let posts = getPosts();
+
+    let post = {
+      id: Date.now().toString() + Math.random().toString(16).slice(2),
+      name: localStorage.getItem("bondhuName") || "Bondhu",
+      text: value,
+      image: imageData,
+      likes: 0,
+      comments: []
+    };
+
+    posts.unshift(post);
+
+    if(savePosts(posts)){
+      renderPost(post);
+      input.value = "";
+      imageInput.value = "";
+    }
+
+    button.disabled = false;
+    button.textContent = "পোস্ট করুন";
+  }
+
+  if(file){
+    if(!file.type.startsWith("image/")){
+      alert("একটি ছবি নির্বাচন করুন");
+      button.disabled = false;
+      button.textContent = "পোস্ট করুন";
+      return;
+    }
+
+    let reader = new FileReader();
+
+    reader.onload = function(event){
+      let img = new Image();
+
+      img.onload = function(){
+        let canvas = document.createElement("canvas");
+        let maxSize = 1000;
+        let scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+
+        let ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        let imageData = canvas.toDataURL("image/jpeg", 0.7);
+        finishPost(imageData);
+      };
+
+      img.onerror = function(){
+        alert("ছবিটি পড়া যায়নি। অন্য ছবি চেষ্টা করুন।");
+        button.disabled = false;
+        button.textContent = "পোস্ট করুন";
+      };
+
+      img.src = event.target.result;
+    };
+
+    reader.onerror = function(){
+      alert("ছবিটি পড়া যায়নি। আবার চেষ্টা করুন।");
+      button.disabled = false;
+      button.textContent = "পোস্ট করুন";
+    };
+
+    reader.readAsDataURL(file);
+  }else{
+    finishPost("");
+  }
+}
+let demoFriends = [
+  "রাহুল",
+  "সুমন",
+  "রিয়া",
+  "প্রিয়া",
+  "অর্ণব",
+  "সোহেল"
+];
+
+function searchFriends(){
+  let search = document.getElementById("friendSearch").value.trim();
+  let results = document.getElementById("friendResults");
+
+  results.innerHTML = "";
+
+  if(!search){
+    results.textContent = "বন্ধুর নাম লিখুন";
+    return;
+  }
+
+  let matches = demoFriends.filter(name =>
+    name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  matches.forEach(name => {
+    let div = document.createElement("div");
+    div.className = "comment-item";
+
+    let btn = document.createElement("button");
+    btn.textContent = "➕ Add Friend";
+    btn.onclick = function(){
+      addFriend(name);
+    };
+
+    div.textContent = name + " ";
+    div.append(btn);
+    results.append(div);
+  });
+
+  if(matches.length === 0){
+    results.textContent = "কোনো বন্ধু পাওয়া যায়নি";
+  }
+}
+
+function addFriend(name){
+  let friends = JSON.parse(
+    localStorage.getItem("bondhuFriends") || "[]"
+  );
+
+  if(friends.includes(name)){
+    alert("এই বন্ধু আগে থেকেই যোগ করা আছে");
+    return;
+  }
+
+  friends.push(name);
+  localStorage.setItem("bondhuFriends", JSON.stringify(friends));
+
+  showFriends();
+  alert(name + " আপনার বন্ধু হয়েছে ❤️");
+}
+
+function showFriends(){
+  let friends = JSON.parse(
+    localStorage.getItem("bondhuFriends") || "[]"
+  );
+
+  let area = document.getElementById("myFriends");
+  area.innerHTML = "";
+
+  friends.forEach(name => {
+    let p = document.createElement("p");
+    p.textContent = "👤 " + name;
+    area.append(p);
+  });
+}
+function sharePost(){
+  alert("Bondhu Social-এ স্বাগতম!");
+}
+
+window.addEventListener("load", function(){
+  if(localStorage.getItem("bondhuPhone")){
+    showApp();
+  }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+const SUPABASE_URL =
+  "https://uvcifwizwlpmuveyihxo.supabase.co"
+const SUPABASE_KEY =
+  "sb_publishable_iz6XexH5HuynAme-eZJ6pg_pLDKEhso"
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+</script>
+</body>
+</html>
