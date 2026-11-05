@@ -607,6 +607,32 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY" && session) {
+    document.getElementById("resetBox").style.display = "block";
+    document.getElementById("loginBox").style.display = "none";
+  }
+});
+
+async function saveNewPassword() {
+  const password = document.getElementById("newPassword").value;
+  const msg = document.getElementById("resetMsg");
+
+  if (password.length < 6) {
+    msg.innerText = "কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড দিন।";
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.updateUser({
+    password: password
+  });
+
+  if (error) {
+    msg.innerText = error.message;
+  } else {
+    msg.innerText = "নতুন পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে।";
+  }
+}
 </script>
 </body><div id="resetBox" class="card" style="display:none;margin:20px">
   <h2>নতুন পাসওয়ার্ড দিন</h2>
