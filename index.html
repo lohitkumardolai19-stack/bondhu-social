@@ -65,6 +65,23 @@ async function signIn() {
     msg.innerText = error.message;
   } else {
     msg.innerText = "লগইন সফল হয়েছে!";
+
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("header").style.display = "block";
+    document.getElementById("nav").style.display = "block";
+    document.getElementById("mainContent").style.display = "block";
+  }
+
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if (error) {
+    msg.innerText = error.message;
+  } else {
+    msg.innerText = "লগইন সফল হয়েছে!";
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("header").style.display = "block";
   }
