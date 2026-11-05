@@ -69,6 +69,25 @@ async function signIn() {
     document.getElementById("header").style.display = "block";
   }
 }
+  async function resetPassword() {
+  const email = document.getElementById("email").value.trim();
+  const msg = document.getElementById("loginMsg");
+
+  if (!email) {
+    msg.innerText = "আগে আপনার ইমেইল ঠিকানা লিখুন।";
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://lohitkumardolai19-stack.github.io/bondhu-social/"
+  });
+
+  if (error) {
+    msg.innerText = error.message;
+  } else {
+    msg.innerText = "পাসওয়ার্ড রিসেট লিংক আপনার ইমেইলে পাঠানো হয়েছে।";
+  }
+  }
 </script>
 <body>
 
