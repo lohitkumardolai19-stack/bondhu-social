@@ -608,5 +608,10 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_KEY
 );
 </script>
-</body>
+</body><div id="resetBox" class="card" style="display:none;margin:20px">
+  <h2>নতুন পাসওয়ার্ড দিন</h2>
+  <input id="newPassword" type="password" placeholder="নতুন পাসওয়ার্ড">
+  <button onclick="saveNewPassword()">পাসওয়ার্ড পরিবর্তন করুন</button>
+  <p id="resetMsg"></p>
+</div>
 </html>
